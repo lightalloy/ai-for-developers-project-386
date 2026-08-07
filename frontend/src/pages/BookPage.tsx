@@ -86,12 +86,14 @@ export function BookPage() {
 
   if (booking) {
     return (
-      <section>
+      <section data-testid="booking-success">
         <h1>Бронирование создано</h1>
         <p>
           {eventType?.title}: {formatRange(booking.startAt, booking.endAt)}
         </p>
-        <p className="muted">ID: {booking.id}</p>
+        <p className="muted" data-testid="booking-id">
+          ID: {booking.id}
+        </p>
         <div className="actions">
           <Link className="button" to="/">
             К каталогу
@@ -99,6 +101,7 @@ export function BookPage() {
           <button
             type="button"
             className="button secondary"
+            data-testid="cancel-booking"
             onClick={async () => {
               try {
                 await api.cancelBooking(booking.id)
@@ -114,7 +117,11 @@ export function BookPage() {
             Отменить бронь
           </button>
         </div>
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="error" data-testid="error-banner">
+            {error}
+          </p>
+        )}
       </section>
     )
   }
@@ -131,12 +138,16 @@ export function BookPage() {
         </p>
       )}
 
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <p className="error" data-testid="error-banner">
+          {error}
+        </p>
+      )}
 
       {slots.length === 0 ? (
         <p className="muted">Свободных слотов нет.</p>
       ) : (
-        <div className="slot-days">
+        <div className="slot-days" data-testid="slot-list">
           {grouped.map(([day, daySlots]) => (
             <div key={day} className="day-block">
               <h2>{day}</h2>
@@ -146,6 +157,8 @@ export function BookPage() {
                     key={slot.startAt}
                     type="button"
                     className={selected === slot.startAt ? 'slot selected' : 'slot'}
+                    data-testid="slot-button"
+                    data-start={slot.startAt}
                     onClick={() => setSelected(slot.startAt)}
                   >
                     {formatSlot(slot.startAt).split(',').pop()?.trim()}
@@ -157,15 +170,21 @@ export function BookPage() {
         </div>
       )}
 
-      <form className="form" onSubmit={onSubmit}>
+      <form className="form" data-testid="booking-form" onSubmit={onSubmit}>
         <h2>Контакты</h2>
         <label>
           Имя
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <input
+            data-testid="guest-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
         </label>
         <label>
           Email
           <input
+            data-testid="guest-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -174,9 +193,18 @@ export function BookPage() {
         </label>
         <label>
           Телефон
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input
+            data-testid="guest-phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
         </label>
-        <button className="button" type="submit" disabled={!selected || submitting}>
+        <button
+          className="button"
+          type="submit"
+          data-testid="submit-booking"
+          disabled={!selected || submitting}
+        >
           {submitting ? 'Сохраняю…' : 'Записаться'}
         </button>
       </form>

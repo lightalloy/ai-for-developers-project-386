@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -20,4 +21,4 @@ OWNER = OwnerProfile(
     email="owner@example.com",
 )
 
-DATABASE_URL = "sqlite:///./calendar.db"
+DATABASE_URL = os.environ.get("CALENDAR_DATABASE_URL", "sqlite:///./calendar.db")

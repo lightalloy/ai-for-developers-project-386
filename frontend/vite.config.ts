@@ -6,10 +6,14 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/admin': 'http://localhost:8000',
-      '/event-types': 'http://localhost:8000',
-      '/bookings': 'http://localhost:8000',
-      '/health': 'http://localhost:8000',
+      // Не проксируем сам SPA-маршрут /admin — только API под ним.
+      '/admin/owner': 'http://127.0.0.1:8000',
+      '/admin/event-types': 'http://127.0.0.1:8000',
+      '/admin/meetings': 'http://127.0.0.1:8000',
+      '/admin/bookings': 'http://127.0.0.1:8000',
+      '/event-types': 'http://127.0.0.1:8000',
+      '/bookings': 'http://127.0.0.1:8000',
+      '/health': 'http://127.0.0.1:8000',
     },
   },
 })

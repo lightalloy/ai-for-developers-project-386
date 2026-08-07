@@ -60,27 +60,42 @@ export function AdminPage() {
     <section>
       <h1>Админка</h1>
       {owner && (
-        <p className="lead">
+        <p className="lead" data-testid="admin-owner">
           Владелец: {owner.displayName} ({owner.email})
         </p>
       )}
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <p className="error" data-testid="error-banner">
+          {error}
+        </p>
+      )}
 
       <div className="admin-grid">
         <div>
           <h2>Типы событий</h2>
-          <form className="form" onSubmit={onCreate}>
+          <form className="form" data-testid="admin-create-form" onSubmit={onCreate}>
             <label>
               id
-              <input value={id} onChange={(e) => setId(e.target.value)} required />
+              <input
+                data-testid="admin-event-id"
+                value={id}
+                onChange={(e) => setId(e.target.value)}
+                required
+              />
             </label>
             <label>
               Название
-              <input value={title} onChange={(e) => setTitle(e.target.value)} required />
+              <input
+                data-testid="admin-event-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
             </label>
             <label>
               Описание
               <textarea
+                data-testid="admin-event-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
@@ -89,6 +104,7 @@ export function AdminPage() {
             <label>
               Длительность (мин)
               <input
+                data-testid="admin-event-duration"
                 type="number"
                 min={1}
                 value={durationMinutes}
@@ -96,14 +112,19 @@ export function AdminPage() {
                 required
               />
             </label>
-            <button className="button" type="submit">
+            <button className="button" type="submit" data-testid="admin-create-submit">
               Создать
             </button>
           </form>
 
-          <ul className="stack">
+          <ul className="stack" data-testid="admin-event-type-list">
             {types.map((item) => (
-              <li key={item.id} className="row">
+              <li
+                key={item.id}
+                className="row"
+                data-testid="admin-event-type-row"
+                data-event-type-id={item.id}
+              >
                 <div>
                   <strong>{item.title}</strong>
                   <p className="muted">
@@ -114,6 +135,7 @@ export function AdminPage() {
                 <button
                   type="button"
                   className="button secondary"
+                  data-testid="admin-delete-event-type"
                   onClick={async () => {
                     setError(null)
                     try {
@@ -136,11 +158,18 @@ export function AdminPage() {
         <div>
           <h2>Предстоящие встречи</h2>
           {meetings.length === 0 ? (
-            <p className="muted">Нет предстоящих встреч.</p>
+            <p className="muted" data-testid="no-meetings">
+              Нет предстоящих встреч.
+            </p>
           ) : (
-            <ul className="stack">
+            <ul className="stack" data-testid="meetings-list">
               {meetings.map((m) => (
-                <li key={m.bookingId} className="row">
+                <li
+                  key={m.bookingId}
+                  className="row"
+                  data-testid="meeting-row"
+                  data-booking-id={m.bookingId}
+                >
                   <div>
                     <strong>{m.eventTypeTitle}</strong>
                     <p>{formatRange(m.startAt, m.endAt)}</p>
@@ -151,6 +180,7 @@ export function AdminPage() {
                   <button
                     type="button"
                     className="button secondary"
+                    data-testid="admin-cancel-meeting"
                     onClick={async () => {
                       setError(null)
                       try {
