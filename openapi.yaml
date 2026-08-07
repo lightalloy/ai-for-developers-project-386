@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: Calendar Booking API
+  version: 0.1.0
+  description: |
+    Учебный API календаря без регистрации и авторизации.
+
+    Владелец — один заранее заданный профиль (админка `/admin`).
+    Гость бронирует без аккаунта.
+
+    Занятость общая для всех типов событий: конфликт слота → 409.
+    Слоты формирует сервис на 14 дней от текущей даты.
+
+paths:
+  # ---------------------------------------------------------------------------
+  # Admin
+  # ---------------------------------------------------------------------------
+  /admin/owner:
+    get:
+      tags: [Admin]
+      operationId: Admin_getOwner
+      summary: Predefined-профиль владельца
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarOwner"
+
+  /admin/event-types:
+    get:
+      tags: [Admin]
+      operationId: AdminEventTypes_index
+      summary: Список типов событий
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventType"
+    post:
+      tags: [Admin]
+      operationId: AdminEventTypes_create
+      summary: Создать тип события
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventType"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /admin/event-types/{id}:
+    delete:
+      tags: [Admin]
+      operationId: AdminEventTypes_delete
+      summary: Удалить тип события
+      parameters:
+        - $ref: "#/components/parameters/EventTypeId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /admin/meetings:
+    get:
+      tags: [Admin]
+      operationId: Admin_listMeetings
+      summary: Предстоящие встречи (все типы событий)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UpcomingMeeting"
+
+  /admin/bookings/{id}/cancel:
+    post:
+      tags: [Admin]
+      operationId: AdminBookings_cancel
+      summary: Отменить бронирование (владелец)
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # ---------------------------------------------------------------------------
+  # Guest
+  # ---------------------------------------------------------------------------
+  /event-types:
+    get:
+      tags: [Guest]
+      operationId: GuestEventTypes_index
+      summary: Каталог видов брони
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventType"
+
+  /event-types/{id}/slots:
+    get:
+      tags: [Guest]
+      operationId: GuestEventTypes_listSlots
+      summary: Свободные слоты на ближайшие 14 дней
+      description: |
+        Сервис сам формирует интервалы по длительности типа события
+        и исключает занятое время (занятость общая для всех типов).
+      parameters:
+        - $ref: "#/components/parameters/EventTypeId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailableSlot"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /bookings:
+    post:
+      tags: [Guest]
+      operationId: GuestBookings_create
+      summary: Создать бронирование
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBooking"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [Guest]
+      operationId: GuestBookings_cancel
+      summary: Отменить бронирование (гость)
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+components:
+  parameters:
+    EventTypeId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    BookingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Невалидный запрос (в т.ч. слот вне окна 14 дней)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    NotFound:
+      description: Не найдено
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+    Conflict:
+      description: Конфликт (слот занят / уже отменено / id занят)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorBody"
+
+  schemas:
+    CalendarOwner:
+      type: object
+      required: [id, displayName, email]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        email: { type: string, format: email }
+
+    EventType:
+      type: object
+      required: [id, title, description, durationMinutes]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        durationMinutes: { type: integer, format: int32, minimum: 1 }
+
+    CreateEventType:
+      type: object
+      required: [id, title, description, durationMinutes]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        durationMinutes: { type: integer, format: int32, minimum: 1 }
+
+    GuestInfo:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+
+    BookingStatus:
+      type: string
+      enum: [confirmed, cancelled]
+
+    Booking:
+      type: object
+      required: [id, eventTypeId, startAt, endAt, guest, status, createdAt]
+      properties:
+        id: { type: string }
+        eventTypeId: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        guest:
+          $ref: "#/components/schemas/GuestInfo"
+        status:
+          $ref: "#/components/schemas/BookingStatus"
+        createdAt: { type: string, format: date-time }
+
+    CreateBooking:
+      type: object
+      required: [eventTypeId, startAt, guest]
+      properties:
+        eventTypeId: { type: string }
+        startAt: { type: string, format: date-time }
+        guest:
+          $ref: "#/components/schemas/GuestInfo"
+
+    AvailableSlot:
+      type: object
+      required: [eventTypeId, startAt, endAt]
+      properties:
+        eventTypeId: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+
+    UpcomingMeeting:
+      type: object
+      required: [bookingId, eventTypeId, eventTypeTitle, startAt, endAt, guest, status]
+      properties:
+        bookingId: { type: string }
+        eventTypeId: { type: string }
+        eventTypeTitle: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        guest:
+          $ref: "#/components/schemas/GuestInfo"
+        status:
+          $ref: "#/components/schemas/BookingStatus"
+
+    ErrorBody:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
